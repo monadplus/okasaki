@@ -21,7 +21,8 @@ source-repository head
 
 common common-options
   ghc-options: -Wall
-               -O3
+               -Werror
+               -O2
   default-language: Haskell2010
 
 common common-dependencies
@@ -51,10 +52,13 @@ library
      , text        >=1.2.3.0  && <2.0.0.0
      , time        >=1.8.0.1  && <2.0.0.0
   exposed-modules:
-     Lib
+     Chapter2.BST
+     Chapter2.Set
+     Chapter2.Stack
   other-modules:
-  default-extensions: OverloadedStrings
-  hs-source-dirs: src
+  default-extensions:
+    OverloadedStrings
+  -- hs-source-dirs: src
 
 test-suite foldl-tests
   import: common-dependencies
