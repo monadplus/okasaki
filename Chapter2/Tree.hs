@@ -5,26 +5,27 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE RoleAnnotations #-}
-module Chapter2.BST (
-    module Chapter2.BST
+module Chapter2.Tree (
+    module Chapter2.Tree
   ) where
 
 -----------------------------------------------------------
 
+import Prelude hiding (lookup)
 import Data.Maybe (isJust)
 
 -----------------------------------------------------------
 
-data BST a = Bin !(BST a) {-# UNPACK #-}!a !(BST a)
+data Tree a = Bin !(Tree a) {-# UNPACK #-}!a !(Tree a)
            | Tip
 
-type role BST nominal
+type role Tree nominal
 
-empty :: BST a
+empty :: Tree a
 empty = Tip
 {-# INLINEABLE empty #-}
 
-lookup :: (Ord a) => a -> BST a -> Maybe a
+lookup :: (Ord a) => a -> Tree a -> Maybe a
 lookup = go
   where
     go _ Tip = Nothing
@@ -39,13 +40,13 @@ lookup = go
 
 member
   :: (Ord a)
-  => a -> BST a -> Bool
-member a = isJust . Chapter2.BST.lookup a
+  => a -> Tree a -> Bool
+member a = isJust . lookup a
 {-# INLINEABLE member #-}
 
 insert
   :: (Ord a)
-  => a -> BST a -> BST a
+  => a -> Tree a -> Tree a
 insert = go
   where
     go !x Tip =
@@ -60,7 +61,7 @@ insert = go
 {-# INLINEABLE insert #-}
 
 
-bst :: BST Int
+bst :: Tree Int
 bst =
   insert 1 $
   insert 2 $
@@ -76,7 +77,7 @@ main = do
 
 ----------------------------------------------------------
 
-type Map k v = BST (KeyValue k v)
+type Map k v = Tree (KeyValue k v)
 
 newtype KeyValue k v = KeyValue { pair :: (k,v) }
   deriving Eq
