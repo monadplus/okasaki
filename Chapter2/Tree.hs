@@ -16,7 +16,7 @@ import Data.Maybe (isJust)
 
 -----------------------------------------------------------
 
-data Tree a = Bin !(Tree a) {-# UNPACK #-}!a !(Tree a)
+data Tree a = Bin !(Tree a) !a !(Tree a)
            | Tip
 
 type role Tree nominal

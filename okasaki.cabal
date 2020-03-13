@@ -52,24 +52,27 @@ library
      , text        >=1.2.3.0  && <2.0.0.0
      , time        >=1.8.0.1  && <2.0.0.0
   exposed-modules:
+     Chapter3.RedBlackTree
+  other-modules:
      Chapter2.Tree
      Chapter2.Set
      Chapter2.Stack
-     Chapter3.RedBlackTree
-  other-modules:
   default-extensions:
     OverloadedStrings
   -- hs-source-dirs: src
 
-test-suite foldl-tests
+test-suite okasaki-tests
   import: common-dependencies
   import common-options
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   hs-source-dirs: test
-  build-depends: hspec             >=2.6.0    && <2.8
+  build-depends:
+                 okasaki
+               , hspec             >=2.6.0    && <2.8
                , QuickCheck        >=2.12     && <2.14
   other-modules:
+    Chapter3.RedBlackTreeSpec
   ghc-options:   -threaded
                  -rtsopts
                  -with-rtsopts=-N
