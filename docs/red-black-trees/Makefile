@@ -3,10 +3,10 @@ TARGET=report
 all: pdf
 
 report.pdf: $(wildcard *.tex) $(wildcard *.bib)
-	- pdflatex -shell-escape $(TARGET)
+	- lualatex -shell-escape $(TARGET)
 	- bibtex  $(TARGET)
-	- pdflatex -shell-escape $(TARGET)
-	pdflatex -shell-escape $(TARGET)
+	- lualatex -shell-escape $(TARGET)
+	lualatex -shell-escape $(TARGET)
 
 pdf: report.pdf
 

@@ -1,5 +1,5 @@
 { mkDerivation, async, base, bytestring, containers, directory, filepath
-, mtl, stdenv, stm, text, time, hspec, QuickCheck
+, mtl, stdenv, stm, text, time, hspec, QuickCheck, foldl
 }:
 mkDerivation {
   pname = "red-black-trees";
@@ -7,9 +7,11 @@ mkDerivation {
   src = ./.;
   isLibrary = true;
   isExecutable = true;
-  executableHaskellDepends = [ base ];
+  executableHaskellDepends = [
+    base QuickCheck foldl
+  ];
   libraryHaskellDepends = [
-    async bytestring containers directory filepath mtl stm text time
+    async bytestring containers directory filepath mtl stm text time QuickCheck
   ];
   testHaskellDepends = [
     base hspec QuickCheck

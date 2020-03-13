@@ -3,9 +3,40 @@
 {-# LANGUAGE DeriveFoldable     #-}
 {-# LANGUAGE DeriveFunctor      #-}
 {-# LANGUAGE DeriveTraversable  #-}
-{-# LANGUAGE DerivingStrategies #-}
-{-# LANGUAGE RankNTypes         #-}
 {-# LANGUAGE RoleAnnotations    #-}
+-------------------------------------------------------------------------------
+-- |
+-- Module      :  Chapter3.RedBlackTree
+-- Copyright   :  (C) 2020 Arnau Abella
+-- License     :  MIT (see the file LICENSE)
+-- Maintainer  :  Arnau Abella <arnauabella@gmail.com>
+-- Stability   :  experimental
+--
+--
+-- A red-black tree is a self balancing binary tree
+-- in which every node is colored red or black.
+--
+-- Every red-black tree satisfy the following two balance invariants:
+--
+--    * No red node has a red child
+--    * Every path from the root to an empty node contains the same number of black nodes.
+--
+-- These invariants are preserved on every insertion by a recursive rebalance.
+--
+-- Time complexity:
+--
+-- +-----------+---------------+------------+
+-- | Algorithm | Average Case  | Worst Case |
+-- +===========+===============+============+
+-- | Space     | O(n)          | O(log n)   |
+-- +-----------+---------------+------------+
+-- | Search    | O(log n)      | O(log n)   |
+-- +-----------+---------------+------------+
+-- | Insert    | O(log n)      | O(log n)   |
+-- +-----------+---------------+------------+
+-- | Deete     | O(log n)      | O(log n)   |
+-- +-----------+---------------+------------+
+-------------------------------------------------------------------------------
 module Chapter3.RedBlackTree (
   -- * Red-black tree type
     RedBlackTree (..)
@@ -16,6 +47,7 @@ module Chapter3.RedBlackTree (
   -- * Construction
   , empty
   -- ** From list
+  , fromList
   , fromOrdList
   , toOrdList
   -- * Insertion
@@ -32,20 +64,21 @@ module Chapter3.RedBlackTree (
   , maxDepth
   -- ** Invariants Check
   , checkInvariants
+  -- * Testing
+  , genRBT
   ) where
+
+--------------------------------------------------------------------------
 
 import           Control.Exception
 import           Data.Maybe        (isJust)
 import           Prelude           hiding (lookup)
+import           Test.QuickCheck
+import qualified Data.List as List
 
--- | A red-black tree is a self balancing binary tree
--- in which every node is colored red or black.
---
--- Every red-black tree satisfy the following two balance invariants:
--- * No red node has a red child
--- * Every path from the root to an empty node contains the same number of black nodes.
---
--- Theorem. The maximum depth of a node in a red-black tree of size n is at most 2⌊log(n + 1)⌋
+--------------------------------------------------------------------------
+
+-- | Red-black Tee data type
 data RedBlackTree a
   = Bin Color !(RedBlackTree a) !a !(RedBlackTree a)
   | Tip
@@ -56,8 +89,9 @@ instance Show a => Show (RedBlackTree a) where
 
 type role RedBlackTree nominal
 
--- | Color of each node: Red and Black
-data Color = R | B
+-- | Color of each node.
+data Color = R -- ^ Red
+           | B -- ^ Black
   deriving (Show, Enum)
 
 -- | Returns an empty red-black tree.
@@ -133,7 +167,19 @@ delete
 delete = error "Not implemented."
 {-# INLINEABLE delete #-}
 
+-- | Construct a red-black tree from an arbitrary list.
+--
+-- Cost: O(n*log(n))
+--
+-- If you **know** that the list is sorted, use 'fromOrdList'.
+fromList :: (Ord a) => [a] -> RedBlackTree a
+fromList = foldr insert empty
+
 -- | Given an ordered list with no duplicate, returns a red-black tree.
+--
+-- @
+-- fromOrdList [1.10000]
+-- @
 --
 -- Cost: O(n) (notice this is faster than n inserts.)
 fromOrdList :: [a] -> RedBlackTree a
@@ -165,12 +211,17 @@ toOrdList           Tip = []
 toOrdList (Bin _ l y r) = toOrdList l ++ [y] ++ toOrdList r
 {-# INLINEABLE toOrdList #-}
 
--- | Generic depth function
+-- | The depth of a node is the number of edges from the node to the root.
+--
+-- 'heigth' and 'depth' are equivalent in this context.
+--
+-- The heigth and depth are properties of the nodes, not of the trees.
+-- e.g. on a tree of size 3, a node of heigth 2 has depth 0, and viceversa.
 depth :: (Int -> Int -> Int) -> RedBlackTree a -> Int
-depth choice = go
+depth choice = (subtract 1) . go -- ^ The root has depth 0
   where
     go           Tip = 0
-    go (Bin _ l _ r) = choice (minDepth l) (minDepth r) + 1
+    go (Bin _ l _ r) = choice (go l) (go r) + 1
 {-# INLINEABLE depth #-}
 
 -- | Depth of the shortest path in the red-black tree from the root to the leaf.
@@ -239,3 +290,33 @@ draw (Bin c l x r) =
       drawSubTrees []     = []
       drawSubTrees [t]    = "|" : shift "l- " "   " (draw t)
       drawSubTrees (t:ts) = "|" : shift "r- " "|  " (draw t) ++ drawSubTrees ts
+
+
+-- | A generator for values of type 'RedBlackTree' of the given size.
+genRBT :: (Arbitrary a, Ord a) => Int -> Gen (RedBlackTree a)
+genRBT = fmap (fromList . unUnique) . genUniqueList -- Otherwise the size would't be n
+
+newtype UniqueList a = UniqueList { unUnique :: [a] }
+    deriving Show
+
+-- | 90 % of samples are randomly distributed elements
+--   10 % are sorted.
+genUniqueList :: (Arbitrary a, Ord a) => Int -> Gen (UniqueList a)
+genUniqueList n =
+  frequency [ (9, genUniqueList' n arbitrary)
+            , (1, (UniqueList . unSorted) <$> genUniqueSortedList n arbitrary)
+            ]
+
+genUniqueList' :: (Eq a) => Int -> Gen a -> Gen (UniqueList a)
+genUniqueList' n gen =
+  UniqueList <$> vectorOf n gen `suchThat` isUnique
+
+newtype UniqueSortedList a = UniqueSortedList { unSorted :: [a] }
+    deriving Show
+
+genUniqueSortedList :: (Ord a) => Int -> Gen a -> Gen (UniqueSortedList a)
+genUniqueSortedList n gen =
+  UniqueSortedList . List.sort . unUnique <$> genUniqueList' n gen
+
+isUnique :: Eq a => [a] -> Bool
+isUnique x = List.nub x == x

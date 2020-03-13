@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables #-}
 module Chapter3.RedBlackTreeSpec (spec) where
 
 --------------------------------------------------
@@ -6,6 +7,7 @@ import           Chapter3.RedBlackTree (Color (..), RedBlackTree (..))
 import qualified Chapter3.RedBlackTree as RBT
 import           Control.Exception     (evaluate)
 import           Test.Hspec
+import           Test.Hspec.QuickCheck (prop)
 import           Test.QuickCheck
 
 --------------------------------------------------
@@ -34,6 +36,13 @@ spec = do
       let xs = [1..1000] :: [Int]
           f = RBT.toOrdList . RBT.fromOrdList
       f xs `shouldBe` xs
+
+    prop "maxDepth = 2*floor[log (n + 1)]" $ do
+      property $
+        \(n :: Positive Int) ->
+           let size = 1000
+               rbt = RBT.fromOrdList [1..size] :: RedBlackTree Int
+           in RBT.maxDepth rbt <= 2*floor (logBase 2.0 (fromIntegral size + 1.0))
 
 ------------------------------------------------------
 
