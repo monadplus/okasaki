@@ -1,6 +1,6 @@
 { nixpkgs     ? import ./nix/nixpkgs.nix {}
-, compiler    ? "ghc881"
-, doBenchmark ? false
+, compiler    ? "ghc883"
+, doBenchmark ? true
 }:
 let
   inherit (nixpkgs) pkgs;

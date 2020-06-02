@@ -1,6 +1,6 @@
 { nixpkgs     ? import ./nix/nixpkgs.nix {}
-, compiler    ? "ghc881"
-, doBenchmark ? false
+, compiler    ? "ghc883"
+, doBenchmark ? true
 }:
 
 let
@@ -31,6 +31,6 @@ let
 in
   doStatic (
     doBench (
-      haskellPackages.callPackage ./okasaki.nix {}
+      haskellPackages.callCabal2nix "okasaki" ./. {}
     )
   )

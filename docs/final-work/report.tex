@@ -1,0 +1,400 @@
+\documentclass[12pt, a4paper]{article} % book, report, article, letter, slides
+                                       % letterpaper/a4paper, 10pt/11pt/12pt, twocolumn/twoside/landscape/draft
+
+%%%%%%%%%%%%%%%% PACKAGES %%%%%%%%%%%%%%%%%%%%%
+
+\usepackage[utf8]{inputenc} % encoding
+
+\usepackage[english]{babel} % use special characters and also translates some elements within the document.
+
+\usepackage{amsmath}        % Math
+\usepackage{amsthm}         % Math, \newtheorem, \proof, etc
+\usepackage{amssymb}        % Math, extended collection
+\usepackage{bm}             % $\bm{D + C}$
+\newtheorem{theorem}{Theorem}[section]     % \begin{theorem}\label{t:label}  \end{theorem}<Paste>
+\newtheorem{corollary}{Corollary}[theorem]
+\newtheorem{lemma}[theorem]{Lemma}
+\newenvironment{claim}[1]{\par\noindent\underline{Claim:}\space#1}{}
+\newenvironment{claimproof}[1]{\par\noindent\underline{Proof:}\space#1}{\hfill $\blacksquare$}
+
+\usepackage{hyperref}       % Hyperlinks \url{url} or \href{url}{name}
+
+\usepackage{parskip}        % \par starts on left (not idented)
+
+\usepackage{abstract}       % Abstract
+
+\usepackage{graphicx}       % Images
+\graphicspath{{./images/}}
+
+\usepackage[vlined,ruled]{algorithm2e} % pseudo-code
+
+% \usepackage[document]{ragged2e}  % Left-aligned (whole document)
+% \begin{...} ... \end{...}   flushleft, flushright, center
+
+%%%%%%%%%%%%%%%% CODE %%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{minted}         % Code listing
+% \mint{html}|<h2>Something <b>here</b></h2>|
+% \inputminted{octave}{BitXorMatrix.m}
+
+%\begin{listing}[H]
+  %\begin{minted}[xleftmargin=20pt,linenos,bgcolor=codegray]{haskell}
+  %\end{minted}
+  %\caption{Example of a listing.}
+  %\label{lst:example} % You can reference it by \ref{lst:example}
+%\end{listing}
+
+\newcommand{\code}[1]{\texttt{#1}} % Define \code{foo.hs} environment
+
+%%%%%%%%%%%%%%%% COLOURS %%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{xcolor}         % Colours \definecolor, \color{codegray}
+\definecolor{codegray}{rgb}{0.9, 0.9, 0.9}
+% \color{codegray} ... ...
+% \textcolor{red}{easily}
+
+%%%%%%%%%%%%%%%% CONFIG %%%%%%%%%%%%%%%%%%%%%
+
+\renewcommand{\absnamepos}{flushleft}
+\setlength{\absleftindent}{0pt}
+\setlength{\absrightindent}{0pt}
+
+%%%%%%%%%%%%%%%% GLOSSARIES %%%%%%%%%%%%%%%%%%%%%
+
+%\usepackage{glossaries}
+
+%\makeglossaries % before entries
+
+%\newglossaryentry{latex}{
+    %name=latex,
+    %description={Is a mark up language specially suited
+    %for scientific documents}
+%}
+
+% Referene to a glossary \gls{latex}
+% Print glossaries \printglossaries
+
+\usepackage[acronym]{glossaries} %
+
+% \acrshort{name}
+% \acrfull{name}
+%\newacronym{kcol}{$k$-COL}{$k$-coloring problem}
+
+\usepackage{enumitem}
+
+%%%%%%%%%%%%%%%% HEADER %%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{Arnau Abella}
+\lhead{Advanced Data Structures - MIRI}
+\rfoot{Page \thepage}
+
+%%%%%%%%%%%%%%%% TITLE %%%%%%%%%%%%%%%%%%%%%
+
+\title{%
+  Purely Functional Data Structures\\
+  %by Chris Okasaki\\
+  \large{Advanced Data Structures \\ Final Work}
+}
+\author{%
+  Arnau Abella \\
+  \large{Universitat Polit\`ecnica de Catalunya}
+}
+\date{\today}
+
+%%%%%%%%%%%%%%%% DOCUMENT %%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\maketitle
+
+%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Summary of the paper}%
+\label{sec:Summary of the paper}
+
+The chosen paper, in fact a book, is \mbox{\textit{Purely Functional Data Structures} \cite{oka98}}.
+
+The book has around 300 pages, 11 chapters and covers a wide variety of contents which, most of them, can't be given without previous content. For this reason, this work will focus only in chapter 5,6 and 7, which are, in my opinion, the most relevant introductory chapters. The list topics presented in these chapters are the following:
+
+\begin{itemize}
+  \item Chapter 5. Fundamentals of Amortization
+  \item Chapter 6. Amortization and Persistence via Lazy Evaluation
+  \item Chapter 7. Eliminating Amortization
+\end{itemize}
+
+I'd love to talk about all different data structures mentioned in the book such as Binomial Heaps, Splay Heaps, Pairing Heaps, Bottom-Up Merge with Sharing, Hood-Melville Real-Time Queues, Binary Random-Access Lists, Skew Binomial Heaps, etc., and also about more advanced topics like \textit{lazy rebuilding}, \textit{numerical representations}, \textit{data-strutural bootstrapping}, \textit{implicit recursive slowdown}, etc. but, for today, we will work those 3 previously mentioned chapters and focus on a very simple and educative data structure, a \textit{Queue}.
+
+\subsection{Fundamentals of Amortization}%
+\label{sub:Fundamentals of Amortization}
+
+Given a sequence of operations, we may wish to know the running time of the entire sequence, but not care about the running time of any individual operation. Given a sequence of $n$ operations, we wish to bound the total running time of the sequence by $O(n)$.
+
+To prove an amortized bound, one defines the amortized cost of each operation and then proves that, for any sequence of operations, the total amortized cost of the operations is an upper on the total actual cost, i.e.,
+
+\begin{equation}%
+\label{amortized cost formula}
+  \sum_{i=1}^m a_i \geq \sum_{i=1}^m t_i
+\end{equation}
+
+where $a_i$ is the amortized cost of operation $i$, $t_i$ is the actual cost of operation $i$, and $m$ is the total number of operations.
+
+%The difference between the accumulated amortized costs and the accumulated actual costs is called the \textit{accumulated savings}.
+
+%Amortization allows for occasional operations to have actual costs that exceed their amortized costs. Such operations are called \textit{expensive}. Operations whose actual costs are less than their amortized costs are called \textit{cheap}.
+
+The key to proving amortized bounds is to show that expensive operations occur only when the accumulated savings are sufficient to cover the remaining cost.
+
+Tarjan \cite{tar85} describes two techniques for analyzing amortized data structures: the \textit{banker's method} and the \textit{physicist's method}.
+
+In the \textit{banker's method}, the accumulated savings are represented as \textit{credits} that are associated with individual locations in the data structure. The amortized cost of any operation is defined to be the actual cost of the operation plus the credits allocated by the operation minus the credits spent by the operation, i.e.
+
+\begin{equation}%
+\label{banker's method equation}
+  a_i = t_i + c_i - \bar{c_i}
+\end{equation}
+
+where $c_i$ is the number of credits allocated by the operation $i$ and $\bar{c_i}$ is the number of credits spent by operation $i$. Every credit must be allocated before it is spent, and no credit may be spent more than once. Therefore, $\sum c_i \geq \sum \bar{c_i}$, which in turn guarantees that $\sum a_i \geq \sum t_i$. Proofs using the banker's method typically define a \textit{credit invariant} that regulates the distribution of credits in such a way that, whenever an expensive operation might occur, sufficient credits have been allocated in the right locations to cover its cost.
+
+In the \textit{physicist's method}, one describes a function $\Phi$ that maps each object $d$ to a real number called the \textit{potential} of $d$. The function $\Phi$ is tipically chosen so that the potential is initially zero and is always non-negative. Then, the potential represents a lower bound on the accumulated savings.
+
+Let $d_i$ be the output of operation $i$ and the input of operation $i+1$. Then, the amortized cost of operation $i$ is defined to be the actual cost plus the change in potential between $d_{i-1}$ and $d_i$, i.e.,
+
+\begin{equation}%
+\label{physicist's method equation}
+  a_i = t_i + \Phi(d_i) - \Phi(d_{i-1})
+\end{equation}
+
+The accumulated actual cost of the sequence of operations are
+
+\begin{align*}%
+\label{physicist's cost}
+  \sum_{i=1}^{j} t_i &= \sum_{i=1}^{j} (a_i + \Phi(d_{i-1}) - \Phi(d_i)) \\
+                     &= \sum_{i=1}^{j} a_i + \sum_{i=1}^{j} (\Phi(d_{i-1}) - \Phi(d_i)) \\
+                     &= \sum_{i=1}^{j} a_i + \Phi(d_0) - \Phi(d_j)
+\end{align*}
+
+%We can convert the banker's method to the pysicist's method by ignoring locations and taking the potential to be the total number of credits in the object, as indicated by the credit invariant. Similarly, we can convert the physicist's method to the banker's method by converting the potential to credits, and placing all credits on the root.
+
+\subsubsection{Queues}%
+\label{subsub:Queues}
+
+We next illustrate the banker's and pysicist's methods by analyzing a simple functional implementation of the FIFO queue abstraction (listing \ref{lst:queue}).
+
+\begin{listing}[h]
+    \inputminted{haskell}{../../Chapter5/BatchedQueue.hs}
+    \caption{Functional Queue}
+    \label{lst:queue}
+\end{listing}
+
+Both \code{snoc} and \code{head} run in $O(1)$ worst-case time, but \code{tail} takes $O(n)$ time in the worst-case. However, we can show that \code{snoc} and \code{tail} both take $O(1)$ amortized time using either the banker's method or the physicist's method.
+
+Using the banker's method, we maintain a credit invariant that every element in the rear list is associated with a single credit. Every \code{snoc} into a non-empty queue takes one actual step, and allocates a credit to the new element of the rear list, for an amortized cost of two. Every \code{tail} that does not reverse the rear list takes one actual step and neither allocates nor spends any credits, for an amortized cost of one. Finally, every \code{tail} that does reverse the rear list takes $m + 1$ actual steps, where $m$ is the length of the rear list, and spends the $m$ credits contained by that list, for an amortized cost of $m + 1 - m = 1$.
+
+Using the physicist's method, we define the potential function $\Phi$ to be the length of the rear list. Then every \code{snoc} into a non-empty queue takes one actual step and increases the potential by one, for an amortized cost of two. Every \code{tail} that does not reverse the rear list takes one actual step and leaves the potential unchanged, for an amortized cost of one. Finally, every \code{tail} that does reverse the rear list takes $m+1$ actual steps and sets the new rear list to \code{[]}, decreasing the potential by $m$, for an amortized cost of $m + 1 - m = 1$.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%%%%%%%%%%%%    Amortization and Persistence via Lazy Evaluation}
+
+\newpage
+
+\subsection{Amortization and Persistence via Lazy Evaluation}%
+\label{sub:Amortization and Persistence via Lazy Evaluation}
+
+The amortized bounds break in the presence of persitence. In this chapter, we demonstrate how lazy evaluation can mediate the conflict between amortization and persistence, and adapt both the banker's and physicit's methods to account for lazy evaluation. We then illustrate the use of these new methods on a \textit{Queue}.
+
+\subsubsection{Execution Traces and Logical Time}%
+
+Traditional methods of amortization break in the presence of persistence because they assume a unique future, in which the accumulated savings will be spent at most once. Howeer, with persistence, multiple logical futures might all try to spend the same savings.
+
+We model logical time with \textit{execution traces}, which give an abstract view of the history of computation. An \textit{execution trace} is a directed graph whose nodes represent operations of interest, usually just update operations on the data type in question. An edge from $v$ to $v'$ indicates that the operation $v'$ uses some result of operation $v$. The \textit{logical history} of operation $v$, denote $\hat{v}$, is the set of all operation on which the result of $v$ depends (including $v$ itself). In other words, $\hat{v}$ is the set of all nodes $w$ such that there exists a path from $w$ to $v$. A \textit{logical future} of node $v$ is any path from $v$ to a terminal node. If there is more than one such path, then the node $v$ has multiple logical futures.
+
+Execution traces generalize the notion of \textit{version graphs} \cite{dsst89}, which are often used to model the histories of persistent data structures.
+
+\subsubsection{Reconciling Amortization and Persistence}%
+
+In this section, we show how the banker's and physicist's methods can be repaired by replacing the notion of accumulated savings with accumulated debt, where debt measure the cost of unevaluated lazy computations.
+
+We must finde a way to guarantee that if the first application of $f$ to $x$ is expensive, then subsequent applications of $f$ to $x$ will not be. Without side-effects, this is impossible under \textit{call-by-value} (i.e., strict evaluation) or \textit{call-by-name} (i.e., lazy evaluation without memoization). Therefore, amortization cannot be usefully combined with persistence in languages supporting only these evaluation orders.
+
+But now consider \textit{call-by-need} (i.e., lazy evaluation with memoization). If $x$ contains some suspended component that is needed by $f$, then the first application of $f$ to $x$ forces the (potentially expensive) evaluation of that component and memoizes the result. Subsequent operations may then access the memoized result directly. This is exactly the desired behavior!
+
+\subsubsection{A Framework for Analyzing Lazy Data Structures}%
+\label{ssub:A Framework for Analyzing Lazy Data Structures}
+
+Historically, the most common technique for analyzing lazy programs has been to pretend that they are actually strict. We next describe a basic framework to support such analysis. In the remainder of this chapter, we adapt the banker's and physicist's methods to this framework, yielding both the first techniques for analysing persistent amortized data structures and the first practical techniques for analysing non-trivial lazy programs.
+
+
+We classify the costs of any given operation into several categoriest. The \textit{unshared cost} of an operation is the actual time it would take to execute the operation under the assumption that every suspension in the system at the beginning of the operation has already been forced and memoized. The \textit{shared cost} of an operation is the time that it would take to execte every suspension created but not evaluated by the operation. The \textit{complete cost} of an operation is the sum of its hared and unshared costs. Note that the complete cost is what the actual cost of the operation would be if lazy evaluation were replaced with strict evaluation.
+
+\textit{Realized costs} are the shared costs for suspensions that are executed during the overall computation.
+\textit{Unrealized costs} are the shared costs for suspensions that are never executed.
+The \textit{total actual cost} of a sequence of operations is the sum of the unshared costs and the realized shared costs.
+
+We account for shared costs using the notion of \textit{accumulated debt}. Initially, the debt is zero, but every time a suspensions is created, we increase the accumulated debt by the shared cost of the suspension (and any nested suspensions). Each operation then pays off a portion of the accumulated debt. The \textit{amortized cost} of an operation is the unshared cost of the operation plus the amount of accumulated debt paid off by the operation. We are not allowed to force a suspensions until the debt associated with the suspension is entirely paid off.
+
+We avoid the problem of reasoning about multiple logical futures by reasoning each logical future \textit{as if it were the only one}. From the point of view of the operation that creates a suspension, any logical future that forces the suspension must itself pay for the suspension, any logical future that forces the suspension must itself pay for the suspensions. Using this method, we sometimes pays off a debt more than once, thereby overestimating the total time required for a particular computation, but this does no harm and is a small price to pay for the simplicity of the resulting analyses.
+
+\subsubsection{The Banker's Method}%
+\label{ssub:The Banker's Method}
+
+We adapt the banker's method to account for accumulated debt rather than accumulated savings by replacing credits with debits. Each debit represents a constant amount of suspended work. When we initially suspend a given computation, we create a number of debits proportional to its shared cost and associate each debit with a location in the object. If the computation is \textit{monolithic} (i.e., once begun, it runs to completition), then all debits are usually assigned to the root of the result. On the other hand, if the computation is \textit{incremental} (i.e., decomposable into fragments that may be executed independently), then the debits may be distributed among the roots of the partial results.
+
+The amortized cost of an operation is the unshared cost of the operation plus the number of debits discharged by the operation. Note that the number of debits created by an operation is \textit{not} included in its amortized cost. To prove an amortized bound, we must show that, whenever we access a location (possibly triggering the executio nof a suspension), all debits associated with that location have already been discharged. Debits leftover at the end of the computation correspond to unrealized shared costs, and are irrelevant to the total actual cost.
+
+\textit{Incremental} functions play an important role in the banker's method because they allow debits to be dispersed to different locations in a data structure. Then, each location cab ne accessed as soon as its debits are discharged, without waiting for the debits at other locations to be discharged. In practice, this means that the initial partial result of an incremental computation can be paid for very quickly, and that subsequent partial results may be paid for as they are needed. Monolithic functions, on the other hand, are much less flexible.
+
+The justification of this method is omitted for brevity as it does only brings correctness to this adaptation. Still, I would recommend reading the proof from \textit{Pure Functional Data Structures} book.
+
+\subsubsection{Queues}%
+\label{ssub:Queues}
+
+\begin{listing}[h]
+    \inputminted{haskell}{../../Chapter6/BankersQueue.hs}
+    \caption{Banker's Queue}
+    \label{lst:banker's queue}
+\end{listing}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%%%%%%%%%%%%    Eliminating Amortization
+
+\subsection{Eliminating Amortization}%
+\label{sub:Eliminating Amortization}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%%%%%%%%%%%% Why the paper is relevant %%%%%%%%%%%
+
+\section{The importance of Okasaki's work}%
+\label{sec:importance}
+
+Your personal evaluation on why the papers are relevant.
+
+Okasaki works introduces a framework to remove amortized bounds using lazy evaluation which was unknown until then.
+
+Okasaki also improve other techniques to analyze persistent data structures and present very simple but effective implementations of persistent data structures such as Real-Time Queues.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%%%%%%%%%%%% Experiment and results
+
+\section{Experiment \& Results}%
+\label{sec:experiment}
+
+Design a set of experiments to validate the main aspects of the data structure.
+
+A critical analysis of the results of the experiments (theoretical results).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%%%%%%%%%%%% Conclusion
+
+\section{Conclusion}%
+\label{sec:conclusion}
+
+Your personal conclusion.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+%%%%%%%%%%%%%%%% BIBLIOGRAPHY %%%%%%%%%%%%%%%%%%%%%
+
+\bibliographystyle{alpha}
+\bibliography{refs}
+
+\end{document}

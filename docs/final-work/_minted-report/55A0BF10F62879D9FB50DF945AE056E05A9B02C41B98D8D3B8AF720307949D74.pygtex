@@ -1,0 +1,26 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kr}{module} \PYG{n+nn}{Chapter5.BatchedQueue} \PYG{k+kr}{where}
+
+\PYG{k+kr}{data} \PYG{k+kt}{Queue} \PYG{n}{a} \PYG{o+ow}{=} \PYG{k+kt}{Queue} \PYG{p}{[}\PYG{n}{a}\PYG{p}{]} \PYG{p}{[}\PYG{n}{a}\PYG{p}{]}
+
+\PYG{n+nf}{empty} \PYG{o+ow}{::} \PYG{k+kt}{Queue} \PYG{n}{a}
+\PYG{n+nf}{empty} \PYG{o+ow}{=} \PYG{k+kt}{Queue} \PYG{k+kt}{[]} \PYG{k+kt}{[]}
+
+\PYG{n+nf}{checkf} \PYG{o+ow}{::} \PYG{k+kt}{Queue} \PYG{n}{a} \PYG{o+ow}{\PYGZhy{}\PYGZgt{}} \PYG{k+kt}{Queue} \PYG{n}{a}
+\PYG{n+nf}{checkf} \PYG{p}{(}\PYG{k+kt}{Queue} \PYG{k+kt}{[]} \PYG{n}{r}\PYG{p}{)} \PYG{o+ow}{=} \PYG{k+kt}{Queue} \PYG{p}{(}\PYG{n}{reverse} \PYG{n}{r}\PYG{p}{)} \PYG{k+kt}{[]}
+\PYG{n+nf}{checkf} \PYG{n}{q} \PYG{o+ow}{=} \PYG{n}{q}
+
+\PYG{n+nf}{isEmpty} \PYG{o+ow}{::} \PYG{k+kt}{Queue} \PYG{n}{a} \PYG{o+ow}{\PYGZhy{}\PYGZgt{}} \PYG{k+kt}{Bool}
+\PYG{n+nf}{isEmpty} \PYG{p}{(}\PYG{k+kt}{Queue} \PYG{n}{f} \PYG{k+kr}{\PYGZus{}}\PYG{p}{)} \PYG{o+ow}{=} \PYG{n}{null} \PYG{n}{f}
+
+\PYG{n+nf}{snoc} \PYG{o+ow}{::} \PYG{n}{a} \PYG{o+ow}{\PYGZhy{}\PYGZgt{}} \PYG{k+kt}{Queue} \PYG{n}{a} \PYG{o+ow}{\PYGZhy{}\PYGZgt{}} \PYG{k+kt}{Queue} \PYG{n}{a}
+\PYG{n+nf}{snoc} \PYG{n}{x} \PYG{p}{(}\PYG{k+kt}{Queue} \PYG{n}{f} \PYG{n}{r}\PYG{p}{)} \PYG{o+ow}{=} \PYG{n}{checkf} \PYG{p}{(}\PYG{k+kt}{Queue} \PYG{n}{f} \PYG{p}{(}\PYG{n}{x}\PYG{k+kt}{:}\PYG{n}{r}\PYG{p}{))}
+
+\PYG{n+nf}{head} \PYG{o+ow}{::} \PYG{k+kt}{Queue} \PYG{n}{a} \PYG{o+ow}{\PYGZhy{}\PYGZgt{}} \PYG{n}{a}
+\PYG{n+nf}{head} \PYG{p}{(}\PYG{k+kt}{Queue} \PYG{k+kt}{[]} \PYG{k+kr}{\PYGZus{}}\PYG{p}{)} \PYG{o+ow}{=} \PYG{n+ne}{error} \PYG{l+s}{\PYGZdq{}empty\PYGZdq{}}
+\PYG{n+nf}{head} \PYG{p}{(}\PYG{k+kt}{Queue} \PYG{p}{(}\PYG{n}{x}\PYG{k+kt}{:}\PYG{k+kr}{\PYGZus{}}\PYG{p}{)} \PYG{k+kr}{\PYGZus{}}\PYG{p}{)} \PYG{o+ow}{=} \PYG{n}{x}
+
+\PYG{n+nf}{tail} \PYG{o+ow}{::} \PYG{k+kt}{Queue} \PYG{n}{a} \PYG{o+ow}{\PYGZhy{}\PYGZgt{}} \PYG{k+kt}{Queue} \PYG{n}{a}
+\PYG{n+nf}{tail} \PYG{p}{(}\PYG{k+kt}{Queue} \PYG{k+kt}{[]} \PYG{k+kr}{\PYGZus{}}\PYG{p}{)} \PYG{o+ow}{=} \PYG{n+ne}{error} \PYG{l+s}{\PYGZdq{}empty\PYGZdq{}}
+\PYG{n+nf}{tail} \PYG{p}{(}\PYG{k+kt}{Queue} \PYG{p}{(}\PYG{k+kr}{\PYGZus{}}\PYG{k+kt}{:}\PYG{n}{f}\PYG{p}{)} \PYG{n}{r}\PYG{p}{)} \PYG{o+ow}{=} \PYG{n}{checkf} \PYG{p}{(}\PYG{k+kt}{Queue} \PYG{n}{f} \PYG{n}{r}\PYG{p}{)}
+\end{Verbatim}

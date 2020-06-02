@@ -1,0 +1,167 @@
+\documentclass[12pt, a4paper]{article} % book, report, article, letter, slides
+                                       % letterpaper/a4paper, 10pt/11pt/12pt, twocolumn/twoside/landscape/draft
+
+%%%%%%%%%%%%%%%% PACKAGES %%%%%%%%%%%%%%%%%%%%%
+
+\usepackage[utf8]{inputenc} % encoding
+
+\usepackage[english]{babel} % use special characters and also translates some elements within the document.
+
+\usepackage{amsmath}        % Math
+\usepackage{amsthm}         % Math, \newtheorem, \proof, etc
+\usepackage{amssymb}        % Math, extended collection
+\usepackage{amsfonts}       % Math, Natural, Integers and so
+\usepackage{bm}             % $\bm{D + C}$
+\newtheorem{theorem}{Theorem}[section]     % \begin{theorem}\label{t:label}  \end{theorem}<Paste>
+\newtheorem{corollary}{Corollary}[theorem]
+\newtheorem{lemma}[theorem]{Lemma}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newenvironment{claim}[1]{\par\noindent\underline{Claim:}\space#1}{}
+\newenvironment{claimproof}[1]{\par\noindent\underline{Proof:}\space#1}{\hfill $\blacksquare$}
+
+\usepackage{hyperref}       % Hyperlinks \url{url} or \href{url}{name}
+
+\usepackage{parskip}        % \par starts on left (not idented)
+
+\usepackage{abstract}       % Abstract
+
+\usepackage{tocbibind}      % Adds the bibliography to the table of contents (automatically)
+
+\usepackage{graphicx}       % Images
+\graphicspath{{./images/}}
+
+\usepackage[vlined,ruled]{algorithm2e} % pseudo-code
+
+% \usepackage[document]{ragged2e}  % Left-aligned (whole document)
+% \begin{...} ... \end{...}   flushleft, flushright, center
+
+%%%%%%%%%%%%%%%% CODE %%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{minted}         % Code listing
+% \mint{html}|<h2>Something <b>here</b></h2>|
+% \inputminted{octave}{BitXorMatrix.m}
+
+%\begin{listing}[H]
+  %\begin{minted}[xleftmargin=20pt,linenos,bgcolor=codegray]{haskell}
+  %\end{minted}
+  %\caption{Example of a listing.}
+  %\label{lst:example} % You can reference it by \ref{lst:example}
+%\end{listing}
+
+\newcommand{\code}[1]{\texttt{#1}} % Define \code{foo.hs} environment
+
+%%%%%%%%%%%%%%%% COLOURS %%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{xcolor}         % Colours \definecolor, \color{codegray}
+\definecolor{codegray}{rgb}{0.9, 0.9, 0.9}
+% \color{codegray} ... ...
+% \textcolor{red}{easily}
+
+%%%%%%%%%%%%%%%% CONFIG %%%%%%%%%%%%%%%%%%%%%
+
+\renewcommand{\absnamepos}{flushleft}
+\setlength{\absleftindent}{0pt}
+\setlength{\absrightindent}{0pt}
+
+%%%%%%%%%%%%%%%% GLOSSARIES & ACRONYMS %%%%%%%%%%%%%%%%%%%%%
+
+%\usepackage{glossaries}
+
+%\makeglossaries % before entries
+
+%\newglossaryentry{latex}{
+    %name=latex,
+    %description={Is a mark up language specially suited
+    %for scientific documents}
+%}
+
+% Referene to a glossary \gls{latex}
+% Print glossaries \printglossaries
+
+\usepackage[acronym]{glossaries} %
+
+% \acrshort{name}
+% \acrfull{name}
+% \newacronym{kcol}{$k$-COL}{$k$-coloring problem}
+
+%%%%%%%%%%%%%%% COMMANDS
+
+\newcommand{\Z}{\mathbb{Z}}
+
+%%%%%%%%%%%%%%%% HEADER %%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{Arnau Abella \- MIRI}
+\lhead{Computational Complexity}
+\rfoot{Page \thepage}
+
+%%%%%%%%%%%%%%%% TITLE %%%%%%%%%%%%%%%%%%%%%
+
+\title{%
+  Purely Functional Data Structures
+}
+\author{%
+  Arnau Abella \\
+  \large{Universitat Polit\`ecnica de Catalunya}
+}
+\date{\today}
+
+%%%%%%%%%%%%%%%% DOCUMENT %%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\maketitle
+
+\section*{5. Fundamentals of Amortization}
+
+Amortization and persistence do not fit together.
+
+In order to prove the amortized bound, you need to prove
+
+\begin{equation}
+  \sum_{i=1}^m a_i \geq \sum_{i=1}^m t_i
+\end{equation}
+
+where $a_i$ is the amortized cost of operation $i$, and $t_i$ is the actual cost of operation $i$, and $m$ is the total number of operations.
+
+\textit{Accumulated savings}. \textit{Cheap and expensive operations.} Expensive decrease accumulated savings. Cheap increase accumulated savings. Expensive operations occur only when the accumulated savings are sufficient to cover the remaining cost.
+
+Tarjan [Tar85]:
+
+\begin{itemize}
+  \item Banker's method
+  \item Physicist's method
+\end{itemize}
+
+\textbf{Banker's method}: accumulated savings are represented as \textbf{credits} that are associated with individual locations. The amortized cost of any operation is
+
+\begin{equation}
+  a_i = t_i + c_i - \bar{c_i}
+\end{equation}
+
+where $c_i$ is the number of credits allocated by operation $i$ and $\bar{c_i}$ is the number of credits spent by operation $i$. Every credit must be allocated before it is spent, and no credit may be spent more than once. $\sum c_i \geq \sum \bar{c_i} \implies \sum a_i \geq \sum t_i$
+
+\textbf{Physicist's method}: function $\Phi$ that maps each object $d$ to a real number called the \textit{potential} of $d$. Let $d_i$ be the output of operation $i$ and the input of operation $i+1$.
+
+
+
+
+
+
+
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%
+
+%\begin{thebibliography}{1}
+  %\bibitem{lecture} CS254 Lecture 8, \url{https://lucatrevisan.wordpress.com/2010/05/06/cs254-lecture-8-approximate-counting/}
+%\end{thebibliography}
+
+\end{document}
