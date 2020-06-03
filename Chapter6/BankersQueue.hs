@@ -2,9 +2,9 @@ module Chapter6.BankersQueue where
 
 data Queue a =
   Queue {-# UNPACK #-} !Int -- Length of f
-        [a] -- f
+        [a]                 -- f
         {-# UNPACK #-} !Int -- Length of r
-        [a] -- r
+        [a]                 -- r
 
 empty :: Queue a
 empty = Queue 0 [] 0 []

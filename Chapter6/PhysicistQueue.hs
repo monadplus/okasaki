@@ -1,38 +1,40 @@
 module Chapter6.PhysicistQueue where
 
-import Control.DeepSeq
+import           StrictList (List(..))
+import qualified StrictList as SL
+
+import           Util.Suspension
 
 data Queue a =
-  Queue ![a] -- w: copy of f (to prevent fully evaluating f)
+  Queue (List a)              -- w
         {-# UNPACK #-} !Int -- Length of f
-        [a]  -- f (this should be suspended)
+        (Susp (List a))       -- f
         {-# UNPACK #-} !Int -- Length of r
-        ![a] -- r
+        (List a)              -- r
 
 empty :: Queue a
-empty = Queue [] 0 [] 0 []
+empty = Queue Nil 0 (S Nil) 0 Nil
 
 isEmpty :: Queue a -> Bool
 isEmpty (Queue _ lenf _ _ _) = lenf == 0
 
-check :: NFData a => Queue a -> Queue a
+checkw :: Queue a -> Queue a
+checkw (Queue Nil lenf f lenr r) = Queue (force f) lenf f lenr r
+checkw q = q
+
+check :: Queue a -> Queue a
 check q@(Queue _ lenf f lenr r)
   | lenr <= lenf = checkw q
   | otherwise = let f' = force f
-                 in checkw (Queue f' (lenf + lenr) (f' ++ reverse r) 0 [])
+                 in checkw (Queue f' (lenf + lenr) (S (f' <> SL.reverse r)) 0 Nil)
 
-checkw :: NFData a => Queue a -> Queue a
-checkw (Queue [] lenf f lenr r) = Queue (force f) lenf f lenr r
-checkw q = q
+snoc :: a -> Queue a -> Queue a
+snoc x (Queue w lenf f lenr r) = check (Queue w lenf f (lenr + 1) (Cons x r))
 
-snoc :: NFData a => a -> Queue a -> Queue a
-snoc x (Queue w lenf f lenr r) = check (Queue w lenf f (lenr + 1) (x:r))
+head :: Queue a -> a
+head (Queue Nil _ _ _ _) = error "empty"
+head (Queue (Cons x _) _ _ _ _) = x
 
-head :: NFData a => Queue a -> a
-head (Queue _ _ [] _ _) = error "empty"
-head (Queue _ _ (x:_) _ _) = x
-
-tail :: NFData a => Queue a -> Queue a
-tail (Queue _ _ [] _ _) = error "empty"
-tail (Queue (_:w') lenf f lenr r) = check (Queue w' (lenf - 1) (Prelude.tail $ force f) lenr r)
-tail Queue{} = error "inconceivable" -- guaranteed by invariant, but not in the type system.
+tail :: Queue a -> Queue a
+tail (Queue Nil _ _ _ _) = error "empty"
+tail (Queue (Cons _ w') lenf f lenr r) = check (Queue w' (lenf - 1) (S (SL.tail (force f))) lenr r)

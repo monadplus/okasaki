@@ -45,6 +45,7 @@
 %\end{listing}
 
 \newcommand{\code}[1]{\texttt{#1}} % Define \code{foo.hs} environment
+\newcommand{\haskell}[1]{\mintinline{haskell}{#1}}
 
 %%%%%%%%%%%%%%%% COLOURS %%%%%%%%%%%%%%%%%%%%%
 
@@ -183,8 +184,8 @@ The accumulated actual cost of the sequence of operations are
 
 We next illustrate the banker's and pysicist's methods by analyzing a simple functional implementation of the FIFO queue abstraction (see Listing \ref{lst:queue}).
 
-\begin{listing}[h]
-    \inputminted{haskell}{../../Chapter5/BatchedQueue.hs}
+\begin{listing}[H]
+    \inputminted[breaklines=true]{haskell}{../../Chapter5/BatchedQueue.hs}
     \caption{Functional Queue}
     \label{lst:queue}
 \end{listing}
@@ -238,7 +239,7 @@ But now consider \mbox{\textit{call-by-need}} (i.e., lazy evaluation with memoiz
 \subsubsection{A Framework for Analyzing Lazy Data Structures}%
 \label{ssub:A Framework for Analyzing Lazy Data Structures}
 
-Historically, the most common technique for analyzing lazy programs has been to pretend that they are actually strict. We next describe a basic framework to support such analysis. In the remainder of this chapter, we adapt the banker's and physicist's methods to this framework, yielding both the first techniques for analysing persistent amortized data structures and the first practical techniques for analysing non-trivial lazy programs.
+Historically, the most common technique for analyzing lazy programs has been to pretend that they are actually strict. We next describe a basic framework to support such analysis. In the remainder of this chapter, we adapt the banker's and physicist's methods to this framework, yielding both the first techniques for analyzing persistent amortized data structures and the first practical techniques for analysing non-trivial lazy programs.
 
 
 We classify the costs of any given operation into several categories. The \textit{unshared cost} of an operation is the actual time it would take to execute the operation under the assumption that every suspension in the system at the beginning of the operation has already been forced and memoized. The \textit{shared cost} of an operation is the time that it would take to execte every suspension created but not evaluated by the operation. The \textit{complete cost} of an operation is the sum of its shared and unshared costs. Note that the complete cost is what the actual cost of the operation would be if lazy evaluation were replaced with strict evaluation.
@@ -262,8 +263,8 @@ The amortized cost of an operation is the unshared cost of the operation plus th
 
 The proof of this method is omitted for brevity.
 
-\subsubsection{Queues}%
-\label{ssub:Queues}
+\subsubsection{Banker's Queues}%
+\label{ssub:Banker's Queues}
 
 We next develop an efficient persistent implementation of queues, and prove that every operation runs in $O(1)$ amortied time using the banker's method.
 
@@ -284,6 +285,8 @@ It is possible to re-execute the reverse however. Simply take $k = 0$. Then the 
 \end{listing}
 
 By inspection, the unshared cost of every queue operation is $O(1)$. Therefore, to show that the amortized cost of every queue operation is $O(1)$, we must prove that discharging $O(1)$ debits per operation suffices to pay off every suspension before it is forced. In fact, only \code{snoc} and \code{tail} discharge any debits.
+
+\newpage
 
 Let $d(i)$ be the number of debits on the $i$th node of the front stream and let $D(i) = \sum_{j = 0}^{i} d(j)$ be the cumulative number of debits on all nodes up to and including the $i$th node. We maintain the following \textit{debit invariant}:
 
@@ -331,7 +334,7 @@ The complete code for \textit{Phisicist's Queues} appears in Listing \ref{lst:ph
 \subsection{Eliminating Amortization}%
 \label{sub:Eliminating Amortization}
 
-In some application areas, such as real-time systems or interactive systems, it is important to bound the running times of individual operations, rather than the sequences of operations. In these situations, a worst-case data structure will often be preferable to an amortized data structure, even if the amortized data structure is simpler and faster overall.
+In some application areas, such as \textit{real-time systems} or \textit{interactive systems}, it is important to bound the running times of individual operations, rather than the sequences of operations. In these situations, a worst-case data structure will often be preferable to an amortized data structure, even if the amortized data structure is simpler and faster overall.
 
 \subsubsection{Scheduling}%
 \label{ssub:Scheduling}
@@ -340,13 +343,118 @@ Amortized and worst-case data structures differ mainly in when the computations 
 
 In a lazy amortized data structure, any operation might take longer than the stated bounds. However, this only occurs when the operation forces a suspension that has been paid off, but that takes a long time to execute. To achieve worst-case bounds, we must guarantee that every suspension executes in no more than the allotted time.
 
-Define the \textit{intrinsic cost} of a suspension to be the amount of time it takes to force the suspension under the assumption that all other suspensions on which it depends have already been forced and memoized, and therefore each take ony $O(1)$ time to execute.
+Define the \textit{intrinsic cost} of a suspension to be the amount of time it takes to force the suspension under the assumption that all other suspensions on which it depends have already been forced and memoized, and therefore each take only $O(1)$ time to execute.
 
-The first step in converting an amortized data structure to a worst-case data structure is to reduce the intrinsic cost of every suspension to les than the desired bounds. Usually, this involves rewriting expensive monolithic functions to make them incremental, either by changing the underlying algorithms slightly or by switching from a representation that supports only monolithic functions, such as suspended lists, to one that supports incremental functions as well, such as streams.
+The first step in converting an amortized data structure to a worst-case data structure is to \textit{reduce the intrinsic cost of every suspension to less than the desired bounds}. Usually, this involves rewriting expensive monolithic functions to make them incremental, either by changing the underlying algorithms slightly or by switching from a representation that supports only monolithic functions, such as suspended lists, to one that supports incremental functions as well, such as streams.
 
 Even if every suspension has a small intrinsic cost, some suspensions might still take longer than the allotted time to execute. This happens when one suspension depends on another suspension, which in turn depends on a third, and so on. If none of the suspensions have been executed previously, then forcing the first suspension results in a cascade of forces.
 
-The second step is converting an amortized data structure to a worst-case data structure is to avoid cascading forces by arranging that, whenever we force a suspension, any other suspensions on which it depends have already been forced and memoized. Then, no suspension takes longer than its intrinsic cost to execute. We accomplish this by systematically \textit{scheduling} the execution of each suspension so that each is ready by the time we need it. The trick is to regard paying off debt as a literal activity, and to force each suspension as it is paid for.
+The second step in converting an amortized data structure to a worst-case data structure is to \textit{avoid cascading forces by arranging that, whenever we force a suspension, any other suspensions on which it depends have already been forced and memoized}. Then, no suspension takes longer than its intrinsic cost to execute. We accomplish this by systematically \textit{scheduling} the execution of each suspension so that each is ready by the time we need it. The trick is to regard paying off debt as a literal activity, and to force each suspension as it is paid for.
+
+We extends every object with an extra component, called the \textit{schedule}, that, at least conceptually, contains a pointer to every unevaluated suspension in the object. Some of the suspensions in the schedule may have already been evaluated in a different logical future, but forcing these suspensions a second time does no harm since it can only make an algorithm run faster than expected, not slower. Every operation, in addition to whatever other manipulations it performs on an object, forces the first few suspensions in the schedule. The exact number of suspensions forced is governed by the amortized analysis; typically, every suspension takes $O(1)$ time to execute, so we force a number of suspensions proportional to the amortized cost of the operation. Depending on the data structure, maintaining the schedule can be non-trivial. For this technique to apply, adding a new suspension to the schedule, or retrieving the next suspension to be forced, cannot require more time than the desired worst-case bounds.
+
+\subsubsection{Real-Time Queue}%
+\label{ssub:Real-Time Queue}
+
+As an example of this technique, we convert the amortized banker's queues of section \ref{ssub:Banker's Queues} to worst-case queues. Queues such as these that support all operations in $O(1)$ worst-case time are called \textit{real-time queues} \cite{hm81}.
+
+In the original data structure, queues are rotated using \haskell{++} and \code{reverse}. Since reverse is monolithic, our first task is finding a way to perform rotations incrementally. This can be done by executing one step of the reverse for every step of the \haskell{++}. We define a function \code{rotate} such that
+
+\begin{minted}[escapeinside=||,mathescape=true]{haskell}
+  rotate xs ys a |$\equiv$| xs ++ reverse ys ++ a
+\end{minted}
+
+Then
+
+\begin{minted}[escapeinside=||,mathescape=true]{haskell}
+  rotate f r [] |$\equiv$| f ++ reverse r
+\end{minted}
+
+The extra argument, $a$, is called an \textit{accumulating parameter} and is used to accumulate the partial results of reversing $ys$. It is initially empty.
+
+\newpage
+
+Rotations occur when $|r| = |f| + 1$, so initially $|ys| = |xs| + 1$. This relationship is preserved throughout the rotation, so when $xs$ is empty, $ys$ contains a single element. The base case is therefore
+
+\begin{minted}[escapeinside=||,mathescape=true]{haskell}
+  rotate [] (y : []) a
+    |$\equiv$| [] ++ reverse (y : []) ++ a
+    |$\equiv$| y : a
+\end{minted}
+
+In the recursive case,
+
+\begin{minted}[escapeinside=||,mathescape=true]{haskell}
+  rotate (x:xs) (y:ys) a
+    |$\equiv$| (x:xs) ++ reverse (y:ys) ++ a
+    |$\equiv$| x : (xs ++ reverse (y:ys) ++ a)
+    |$\equiv$| x : (xs ++ reverse ys ++ (y:a))
+    |$\equiv$| x : (rotate xs ys (y:a))
+\end{minted}
+
+Puttng these cases together, we get
+
+\begin{minted}[breaklines=true]{haskell}
+  rotate' :: [a] -> List a -> [a] -> [a]
+  rotate'     [] (Cons y  _) a = y : a
+  rotate' (x:xs) (Cons y ys) a = x : rotate' xs ys (y:a)
+\end{minted}
+
+Note that the intrinsic cost of every suspension created by rotate is $O(1)$.
+
+Next, we add a schedule to the datatype. The original datatype was
+
+\begin{minted}[breaklines=true]{haskell}
+  data Queue a = Queue Int [a] Int [a]
+\end{minted}
+
+We extend this type with a new field $s$ of type \code{[a]} that represents a \textit{schedule} for forcing the nodes of $f$. Besides adding $s$, we make two further changes to the datatype. First, to emphasize the fact that the nodes of $r$ need not be scheduled, we change $r$ from a stream to a list. Second, we eliminate the length fields. We no longer need the length fields to determine when $r$ becomes longer than $f$ --- instead, we can obtain this information from the schedule. The new datatype is thus
+
+\begin{minted}[breaklines=true]{haskell}
+  data Queue a = Queue [a] (List a) [a]
+\end{minted}
+
+With this representation, the major queue functions are simply
+
+\begin{minted}[breaklines=true]{haskell}
+  snoc :: a -> Queue a -> Queue a
+  snoc x (Queue f r s) = let r' = Cons x r in exec f r' s
+
+  head :: Queue a -> a
+  head (Queue (x:_) _ _) = x
+
+  tail :: Queue a -> Queue a
+  tail (Queue (_:f) r s) = exec f r s
+\end{minted}
+
+The helper function \code{exec} executes the next suspension in the schedule and maintains the invariant that $|s| = |f| - |r|$ (which incidentally guarantees that $|f| \geq |r|$ since $|s|$ cannot be negative). \code{snoc} increases $|r|$ by one and \code{tail} decreases $|f|$ by one, so when \code{exec} is called, $|s| = |f| - |r| + 1$. If $s$ is non-empty, then we restore the invariant simply by taking the tail of $s$. If $s$ is empty, then $r$ is one longer than $f$, so we rotate the queue. In either case, the very act of pattern matching against $s$ to determine whether or not it is empty forces and memoizes the next suspension in the schedule.
+
+\begin{minted}[breaklines=true]{haskell}
+  exec :: [a] -> List a -> [a] -> Queue a
+  exec f r (x:s) = x `seq` Queue f r s
+  exec f r [] = let f' = rotate f r in Queue f' Nil f'
+\end{minted}
+
+The complete code for this implementation appears in Listing \ref{lst:Real-Time Queue}
+
+By inspection, every queue operation does only $O(1)$ work outside of forcing suspensions, and no operation forces more than three suspensions. Hence, to show that all queues operations run in $O(1)$ worst-case time, we must prove that no suspension takes more than $O(1)$ time to execute.
+
+Only three forms of suspensions are created by the various queues functions.
+
+\begin{itemize}
+  \item \code{Nil} is created by \code{empty} and \code{exec}. This suspension is trivial and therefore executes in $O(1)$.
+  \item \code{y:a} is creted in both lines of \code{rotate} and is also trivial.
+  \item \code{x:rotate xs ys (y:a)} is created in the second line of \code{rotate}. This suspensions allocates a \code{Cons}, builds a new suspension, and makes a recursive call to \code{rotate}, which pattern matches agaist the first node in $xs$ and immediately creates another suspension. Of these actions, only the force inherent in the pattern match has even the possibility of taking more than $O(1)$ time. But note that $xs$ is a suffix of the front stream that existed just before the previous rotation. The treatment of the schedule $s$ guarantees that \textit{every} node in that stream was forced and memoized prior to the rotation, so forcing this node again takes only $O(1)$ time.
+\end{itemize}
+
+Since every suspension executes in $O(1)$ time, every queue operation runs in $O(1)$ worst-case time.
+
+\begin{listing}[H]
+    \inputminted[breaklines=true]{haskell}{../../Chapter7/RealTimeQueue.hs}
+    \caption{Real-Time Queue}
+    \label{lst:Real-Time Queue}
+\end{listing}
+
 
 
 
@@ -366,17 +474,10 @@ The second step is converting an amortized data structure to a worst-case data s
 \section{The importance of Okasaki's work}%
 \label{sec:importance}
 
-Your personal evaluation on why the papers are relevant.
+Historically, the most common technique for analyzing lazy programs has been to pretend that they are actually strict.
+C. Okasaki yields both the first techniques for analyzing persistent amortized data structures and the first practical techniques for analyzing non-trivial lazy programs.
 
-Okasaki works introduces a framework to remove amortized bounds using lazy evaluation which was unknown until then.
-
-Okasaki also improve other techniques to analyze persistent data structures and present very simple but effective implementations of persistent data structures such as Real-Time Queues.
-
-
-
-
-
-
+\textit{Purely Functional Data Structures} also present new designing techniques of functional data structures such as \textit{lazy rebuild}, a variant of \textit{global rebuilding} \cite{ove83}, \textit{numerical represetation} for functional data structures, \textit{data-structural bootstrapping} for functional data structures, and a framework called \textit{implicit recursive slowdown}, a variant of \textit{recursive slowdown}, that is based on lazy binary numbers instead of segmented binary numbers.
 
 
 
@@ -423,18 +524,9 @@ A critical analysis of the results of the experiments (theoretical results).
 \section{Conclusion}%
 \label{sec:conclusion}
 
-Your personal conclusion.
+Reading \textit{Purely Functional Data Structures} has been very educative. The book is well structured and easy to follow. It has helped me to get a deeper understanding on how to design and implement purely functional data structures. And, I also learnt \textit{Standard M.L}, while reading the book, which is interesting from a programming language designer point of view.
 
-
-
-
-
-
-
-
-
-
-
+Finally, it has helped me to get a better understanding of \textit{lazy evaluation} which, in conjunction with \textit{equational reasoning} and \textit{denotational semantics}, are still not very explored techniques.
 
 
 
