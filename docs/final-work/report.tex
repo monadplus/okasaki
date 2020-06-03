@@ -181,7 +181,7 @@ The accumulated actual cost of the sequence of operations are
 \subsubsection{Queues}%
 \label{subsub:Queues}
 
-We next illustrate the banker's and pysicist's methods by analyzing a simple functional implementation of the FIFO queue abstraction (listing \ref{lst:queue}).
+We next illustrate the banker's and pysicist's methods by analyzing a simple functional implementation of the FIFO queue abstraction (see Listing \ref{lst:queue}).
 
 \begin{listing}[h]
     \inputminted{haskell}{../../Chapter5/BatchedQueue.hs}
@@ -217,11 +217,11 @@ Using the physicist's method, we define the potential function $\Phi$ to be the 
 \subsection{Amortization and Persistence via Lazy Evaluation}%
 \label{sub:Amortization and Persistence via Lazy Evaluation}
 
-The amortized bounds break in the presence of persitence. In this chapter, we demonstrate how lazy evaluation can mediate the conflict between amortization and persistence, and adapt both the banker's and physicit's methods to account for lazy evaluation. We then illustrate the use of these new methods on a \textit{Queue}.
+The amortized bounds break in the presence of persistence. In this chapter, we demonstrate how lazy evaluation can mediate the conflict between amortization and persistence, and adapt both the banker's and physicit's methods to account for lazy evaluation. We then illustrate the use of these new methods on the well-known \textit{Queue}.
 
 \subsubsection{Execution Traces and Logical Time}%
 
-Traditional methods of amortization break in the presence of persistence because they assume a unique future, in which the accumulated savings will be spent at most once. Howeer, with persistence, multiple logical futures might all try to spend the same savings.
+Traditional methods of amortization break in the presence of persistence because they assume a unique future, in which the accumulated savings will be spent at most once. However, with persistence, multiple logical futures might all try to spend the same savings.
 
 We model logical time with \textit{execution traces}, which give an abstract view of the history of computation. An \textit{execution trace} is a directed graph whose nodes represent operations of interest, usually just update operations on the data type in question. An edge from $v$ to $v'$ indicates that the operation $v'$ uses some result of operation $v$. The \textit{logical history} of operation $v$, denote $\hat{v}$, is the set of all operation on which the result of $v$ depends (including $v$ itself). In other words, $\hat{v}$ is the set of all nodes $w$ such that there exists a path from $w$ to $v$. A \textit{logical future} of node $v$ is any path from $v$ to a terminal node. If there is more than one such path, then the node $v$ has multiple logical futures.
 
@@ -231,9 +231,9 @@ Execution traces generalize the notion of \textit{version graphs} \cite{dsst89},
 
 In this section, we show how the banker's and physicist's methods can be repaired by replacing the notion of accumulated savings with accumulated debt, where debt measure the cost of unevaluated lazy computations.
 
-We must finde a way to guarantee that if the first application of $f$ to $x$ is expensive, then subsequent applications of $f$ to $x$ will not be. Without side-effects, this is impossible under \textit{call-by-value} (i.e., strict evaluation) or \textit{call-by-name} (i.e., lazy evaluation without memoization). Therefore, amortization cannot be usefully combined with persistence in languages supporting only these evaluation orders.
+We must finde a way to guarantee that if the first application of $f$ to $x$ is expensive, then subsequent applications of $f$ to $x$ will not be. Without side-effects, this is impossible under \mbox{\textit{call-by-value}} (i.e., strict evaluation) or \mbox{\textit{call-by-name}} (i.e., lazy evaluation without memoization). Therefore, amortization cannot be usefully combined with persistence in languages supporting only these evaluation orders.
 
-But now consider \textit{call-by-need} (i.e., lazy evaluation with memoization). If $x$ contains some suspended component that is needed by $f$, then the first application of $f$ to $x$ forces the (potentially expensive) evaluation of that component and memoizes the result. Subsequent operations may then access the memoized result directly. This is exactly the desired behavior!
+But now consider \mbox{\textit{call-by-need}} (i.e., lazy evaluation with memoization). If $x$ contains some suspended component that is needed by $f$, then the first application of $f$ to $x$ forces the (potentially expensive) evaluation of that component and memoizes the result. Subsequent operations may then access the memoized result directly. This is exactly the desired behavior!
 
 \subsubsection{A Framework for Analyzing Lazy Data Structures}%
 \label{ssub:A Framework for Analyzing Lazy Data Structures}
@@ -241,40 +241,79 @@ But now consider \textit{call-by-need} (i.e., lazy evaluation with memoization).
 Historically, the most common technique for analyzing lazy programs has been to pretend that they are actually strict. We next describe a basic framework to support such analysis. In the remainder of this chapter, we adapt the banker's and physicist's methods to this framework, yielding both the first techniques for analysing persistent amortized data structures and the first practical techniques for analysing non-trivial lazy programs.
 
 
-We classify the costs of any given operation into several categoriest. The \textit{unshared cost} of an operation is the actual time it would take to execute the operation under the assumption that every suspension in the system at the beginning of the operation has already been forced and memoized. The \textit{shared cost} of an operation is the time that it would take to execte every suspension created but not evaluated by the operation. The \textit{complete cost} of an operation is the sum of its hared and unshared costs. Note that the complete cost is what the actual cost of the operation would be if lazy evaluation were replaced with strict evaluation.
+We classify the costs of any given operation into several categories. The \textit{unshared cost} of an operation is the actual time it would take to execute the operation under the assumption that every suspension in the system at the beginning of the operation has already been forced and memoized. The \textit{shared cost} of an operation is the time that it would take to execte every suspension created but not evaluated by the operation. The \textit{complete cost} of an operation is the sum of its shared and unshared costs. Note that the complete cost is what the actual cost of the operation would be if lazy evaluation were replaced with strict evaluation.
 
 \textit{Realized costs} are the shared costs for suspensions that are executed during the overall computation.
 \textit{Unrealized costs} are the shared costs for suspensions that are never executed.
 The \textit{total actual cost} of a sequence of operations is the sum of the unshared costs and the realized shared costs.
 
-We account for shared costs using the notion of \textit{accumulated debt}. Initially, the debt is zero, but every time a suspensions is created, we increase the accumulated debt by the shared cost of the suspension (and any nested suspensions). Each operation then pays off a portion of the accumulated debt. The \textit{amortized cost} of an operation is the unshared cost of the operation plus the amount of accumulated debt paid off by the operation. We are not allowed to force a suspensions until the debt associated with the suspension is entirely paid off.
+We account for shared costs using the notion of \textit{accumulated debt}. Initially, the debt is zero, but every time a suspension is created, we increase the accumulated debt by the shared cost of the suspension (and any nested suspensions). Each operation then pays off a portion of the accumulated debt. The \textit{amortized cost} of an operation is the unshared cost of the operation plus the amount of accumulated debt paid off by the operation. We are not allowed to force a suspensions until the debt associated with the suspension is entirely paid off.
 
-We avoid the problem of reasoning about multiple logical futures by reasoning each logical future \textit{as if it were the only one}. From the point of view of the operation that creates a suspension, any logical future that forces the suspension must itself pay for the suspension, any logical future that forces the suspension must itself pay for the suspensions. Using this method, we sometimes pays off a debt more than once, thereby overestimating the total time required for a particular computation, but this does no harm and is a small price to pay for the simplicity of the resulting analyses.
+We avoid the problem of reasoning about multiple logical futures by reasoning each logical future \textit{as if it were the only one}. From the point of view of the operation that creates a suspension, any logical future that forces the suspension must itself pay for the suspension. Using this method, we sometimes pays off a debt more than once, thereby overestimating the total time required for a particular computation, but this does no harm and is a small price to pay for the simplicity of the resulting analyses.
 
 \subsubsection{The Banker's Method}%
 \label{ssub:The Banker's Method}
 
 We adapt the banker's method to account for accumulated debt rather than accumulated savings by replacing credits with debits. Each debit represents a constant amount of suspended work. When we initially suspend a given computation, we create a number of debits proportional to its shared cost and associate each debit with a location in the object. If the computation is \textit{monolithic} (i.e., once begun, it runs to completition), then all debits are usually assigned to the root of the result. On the other hand, if the computation is \textit{incremental} (i.e., decomposable into fragments that may be executed independently), then the debits may be distributed among the roots of the partial results.
 
-The amortized cost of an operation is the unshared cost of the operation plus the number of debits discharged by the operation. Note that the number of debits created by an operation is \textit{not} included in its amortized cost. To prove an amortized bound, we must show that, whenever we access a location (possibly triggering the executio nof a suspension), all debits associated with that location have already been discharged. Debits leftover at the end of the computation correspond to unrealized shared costs, and are irrelevant to the total actual cost.
+The amortized cost of an operation is the unshared cost of the operation plus the number of debits discharged by the operation. Note that the number of debits created by an operation is \textit{not} included in its amortized cost. To prove an amortized bound, we must show that, whenever we access a location (possibly triggering the execution of a suspension), all debits associated with that location have already been discharged. Debits leftover at the end of the computation correspond to unrealized shared costs, and are irrelevant to the total actual cost.
 
-\textit{Incremental} functions play an important role in the banker's method because they allow debits to be dispersed to different locations in a data structure. Then, each location cab ne accessed as soon as its debits are discharged, without waiting for the debits at other locations to be discharged. In practice, this means that the initial partial result of an incremental computation can be paid for very quickly, and that subsequent partial results may be paid for as they are needed. Monolithic functions, on the other hand, are much less flexible.
+\textit{Incremental} functions play an important role in the banker's method because they allow debits to be dispersed to different locations in a data structure. Then, each location can be accessed as soon as its debits are discharged, without waiting for the debits at other locations to be discharged. In practice, this means that the initial partial result of an incremental computation can be paid for very quickly, and that subsequent partial results may be paid for as they are needed. Monolithic functions, on the other hand, are much less flexible.
 
-The justification of this method is omitted for brevity as it does only brings correctness to this adaptation. Still, I would recommend reading the proof from \textit{Pure Functional Data Structures} book.
+The proof of this method is omitted for brevity.
 
 \subsubsection{Queues}%
 \label{ssub:Queues}
 
-\begin{listing}[h]
-    \inputminted{haskell}{../../Chapter6/BankersQueue.hs}
-    \caption{Banker's Queue}
-    \label{lst:banker's queue}
+We next develop an efficient persistent implementation of queues, and prove that every operation runs in $O(1)$ amortied time using the banker's method.
+
+Now, waiting until the front list becomes empty to reverse the rear list does not leave sufficient time to pay for the reverse. Instead, we periodically \textit{rotate} the queue by moving all the elements of the rear stream to the end of the front stream. When should we rotate the queue ? Recall that \code{reverse} is a monolithic function. We must therefore set up the computation far enough in advance to be able to discharge all its debits by the time its result is needed. The \code{reverse} computation takes $|r|$ steps, so we allocate $|r|$ debits to account for its cost. The earliest the reverse suspensions could be forced is after $|f|$ applications of \code{tail}, so if we rotate the queue when $|r| \approx |f|$ and discharge one debit per operation, then we will have paid for the reverse by the time it is executed. In fact, we rotate the queue whenever $r$ becomes one longer than $f$, thereby maintaining the invariant that $|f| \geq |r|$. Incidentally, this guarantees that $f$ is empty only if $r$ is also empty.
+
+The complete code for this implementation appears in Listing \ref{lst:banker's queue}.
+
+To understand how this implementation deals efficiently with persistence, consider the following scenario. Let $q_0$ be some queue whose front and rear streams are both of length $m$, and let $q_i = tail(q_{i-1})$, for $0 < i \leq m + 1$. The queue is rotated during the first application of \code{tail}, and the reverse suspension is created by the rotation is forced during the last application of \code{tail}. This reversal takes $m$ steps, and its cost is amortized over the sequence $q_1 \ldots q_m$.
+
+Now, choose some branch point $k$, and repeat the calculation from $q_k$ to $q_{m+1}$. Do this $d$ times. How often is the reverse executed? It depends on whether the branch point $k$ is before or after the rotation. Suppose $k$ is after the rotation. In fact, suppose $k = m$ so that each of the repeated branches is a single \code{tail}. Each of these branches forces the reverse suspension, but they each force the \textit{same} suspension, so the reverse is executed only once. Memoization is crucal here --- without memoization, the reverse would be re-executed each time, for a total cost of ${m(d+1)}$ steps, with only ${m + 1 + d}$ operations over which to amortize this cost. Memoization gives us an amortized cost of only $O(1)$ per operation.
+
+It is possible to re-execute the reverse however. Simply take $k = 0$. Then the first \code{tail} of each branch repeats the rotation and creates a new reverse suspension. This new suspenson is forced in the last tail of each branch, executing the reverse. Because these are different suspensions, memoization does not help at all. The total cost of all the reversals is $m \cdot d$, but now we have ${(m + 1)(d + 1)}$ operations over which to amortize this cost, again yielding an amortized cost of $O(1)$ per operation.
+
+\begin{listing}[H]
+  \inputminted[breaklines=true]{haskell}{../../Chapter6/BankersQueue.hs}
+  \caption{Banker's Queue}
+  \label{lst:banker's queue}
 \end{listing}
 
+By inspection, the unshared cost of every queue operation is $O(1)$. Therefore, to show that the amortized cost of every queue operation is $O(1)$, we must prove that discharging $O(1)$ debits per operation suffices to pay off every suspension before it is forced. In fact, only \code{snoc} and \code{tail} discharge any debits.
 
+Let $d(i)$ be the number of debits on the $i$th node of the front stream and let $D(i) = \sum_{j = 0}^{i} d(j)$ be the cumulative number of debits on all nodes up to and including the $i$th node. We maintain the following \textit{debit invariant}:
 
+\[
+  D(i) \leq min(2i, |f| - |r|)
+\]
 
+The $2i$ term guarantees that all debits on the first node of the front stream have been discharged (since $d(0) = D(0) \leq 2 \cdot 0 = 0$). The $|f| - |r|$ term guarantees that all debits in the entire queue have been discharged whenever the streams are of equal length, which happens just before the next rotation.
 
+\begin{theorem}
+  \code{snoc} and \code{tail} maintain the debit invariant by discharging one and two debits, respectively.
+\end{theorem}
+
+\begin{proof}
+  \textit{Purely Functional Data Structures, pg.66}.
+\end{proof}
+
+\subsubsection{The Physicist's Method}%
+
+Like the banker's method, the physicist's method can also be adapted to work with accumulated debt rather than accumulated savings. In the traditional physicist's method, one describes a potential function $\Phi$ that represents a lower bound on the accumulated savings. To work with debt instead of savings, we replace $\Phi$ with a function $\Psi$ that maps each object to a potential representing an upper bound on the accumulated debt. Roughly speaking, the amortized cost of an operation is then the complete cost of the operation (i.e., the shared and unshared cost) minus the change in potential. Recall that an easy way to calculate the complete cost of an operation is to pretend that all computation is strict.
+
+This method is explored further in the book using as an example \textit{Binomial Heaps}, \textit{Physicist's Queues}, \textit{Bottom-Up Mergesort with Sharing} and \textit{Lazy Pairing Heaps} which is omitted in this document for brevity.
+
+The complete code for \textit{Phisicist's Queues} appears in Listing \ref{lst:physicist's queue}.
+
+\begin{listing}[H]
+  \inputminted[breaklines=true]{haskell}{../../Chapter6/PhysicistQueue.hs}
+  \caption{Physicist's Queue}
+  \label{lst:physicist's queue}
+\end{listing}
 
 
 
@@ -292,8 +331,22 @@ The justification of this method is omitted for brevity as it does only brings c
 \subsection{Eliminating Amortization}%
 \label{sub:Eliminating Amortization}
 
+In some application areas, such as real-time systems or interactive systems, it is important to bound the running times of individual operations, rather than the sequences of operations. In these situations, a worst-case data structure will often be preferable to an amortized data structure, even if the amortized data structure is simpler and faster overall.
 
+\subsubsection{Scheduling}%
+\label{ssub:Scheduling}
 
+Amortized and worst-case data structures differ mainly in when the computations charged to a given operation occur. In a worst-case data structure, all computations charged to an operation occur during the operation. In an amortized data structure, some computations charged to an operation may actually occur during later operations.
+
+In a lazy amortized data structure, any operation might take longer than the stated bounds. However, this only occurs when the operation forces a suspension that has been paid off, but that takes a long time to execute. To achieve worst-case bounds, we must guarantee that every suspension executes in no more than the allotted time.
+
+Define the \textit{intrinsic cost} of a suspension to be the amount of time it takes to force the suspension under the assumption that all other suspensions on which it depends have already been forced and memoized, and therefore each take ony $O(1)$ time to execute.
+
+The first step in converting an amortized data structure to a worst-case data structure is to reduce the intrinsic cost of every suspension to les than the desired bounds. Usually, this involves rewriting expensive monolithic functions to make them incremental, either by changing the underlying algorithms slightly or by switching from a representation that supports only monolithic functions, such as suspended lists, to one that supports incremental functions as well, such as streams.
+
+Even if every suspension has a small intrinsic cost, some suspensions might still take longer than the allotted time to execute. This happens when one suspension depends on another suspension, which in turn depends on a third, and so on. If none of the suspensions have been executed previously, then forcing the first suspension results in a cascade of forces.
+
+The second step is converting an amortized data structure to a worst-case data structure is to avoid cascading forces by arranging that, whenever we force a suspension, any other suspensions on which it depends have already been forced and memoized. Then, no suspension takes longer than its intrinsic cost to execute. We accomplish this by systematically \textit{scheduling} the execution of each suspension so that each is ready by the time we need it. The trick is to regard paying off debt as a literal activity, and to force each suspension as it is paid for.
 
 
 
