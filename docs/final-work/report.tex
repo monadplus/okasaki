@@ -89,7 +89,7 @@
 \pagestyle{fancy}
 \fancyhf{}
 \rhead{Arnau Abella}
-\lhead{Advanced Data Structures - MIRI}
+\lhead{Advanced Data Structures}
 \rfoot{Page \thepage}
 
 %%%%%%%%%%%%%%%% TITLE %%%%%%%%%%%%%%%%%%%%%
@@ -184,36 +184,23 @@ The accumulated actual cost of the sequence of operations are
 
 We next illustrate the banker's and pysicist's methods by analyzing a simple functional implementation of the FIFO queue abstraction (see Listing \ref{lst:queue}).
 
+Both \code{snoc} and \code{head} run in $O(1)$ worst-case time, but \code{tail} takes $O(n)$ time in the worst-case. However, we can show that \code{snoc} and \code{tail} both take $O(1)$ amortized time using either the banker's method or the physicist's method.
+
+Using the banker's method, we maintain a credit invariant that every element in the rear list is associated with a single credit. Every \code{snoc} into a non-empty queue takes one actual step, and allocates a credit to the new element of the rear list, for an amortized cost of two. Every \code{tail} that does not reverse the rear list takes one actual step and neither allocates nor spends any credits, for an amortized cost of one. Finally, every \code{tail} that does reverse the rear list takes $m + 1$ actual steps, where $m$ is the length of the rear list, and spends the $m$ credits contained by that list, for an amortized cost of $m + 1 - m = 1$.
+
 \begin{listing}[H]
     \inputminted[breaklines=true]{haskell}{../../Chapter5/BatchedQueue.hs}
     \caption{Functional Queue}
     \label{lst:queue}
 \end{listing}
 
-Both \code{snoc} and \code{head} run in $O(1)$ worst-case time, but \code{tail} takes $O(n)$ time in the worst-case. However, we can show that \code{snoc} and \code{tail} both take $O(1)$ amortized time using either the banker's method or the physicist's method.
-
-Using the banker's method, we maintain a credit invariant that every element in the rear list is associated with a single credit. Every \code{snoc} into a non-empty queue takes one actual step, and allocates a credit to the new element of the rear list, for an amortized cost of two. Every \code{tail} that does not reverse the rear list takes one actual step and neither allocates nor spends any credits, for an amortized cost of one. Finally, every \code{tail} that does reverse the rear list takes $m + 1$ actual steps, where $m$ is the length of the rear list, and spends the $m$ credits contained by that list, for an amortized cost of $m + 1 - m = 1$.
 
 Using the physicist's method, we define the potential function $\Phi$ to be the length of the rear list. Then every \code{snoc} into a non-empty queue takes one actual step and increases the potential by one, for an amortized cost of two. Every \code{tail} that does not reverse the rear list takes one actual step and leaves the potential unchanged, for an amortized cost of one. Finally, every \code{tail} that does reverse the rear list takes $m+1$ actual steps and sets the new rear list to \code{[]}, decreasing the potential by $m$, for an amortized cost of $m + 1 - m = 1$.
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 %%%%%%%%%%%%    Amortization and Persistence via Lazy Evaluation}
-
-\newpage
 
 \subsection{Amortization and Persistence via Lazy Evaluation}%
 \label{sub:Amortization and Persistence via Lazy Evaluation}
@@ -317,11 +304,6 @@ The complete code for \textit{Phisicist's Queues} appears in Listing \ref{lst:ph
   \caption{Physicist's Queue}
   \label{lst:physicist's queue}
 \end{listing}
-
-
-
-
-
 
 
 
@@ -450,21 +432,10 @@ Only three forms of suspensions are created by the various queues functions.
 Since every suspension executes in $O(1)$ time, every queue operation runs in $O(1)$ worst-case time.
 
 \begin{listing}[H]
-    \inputminted[breaklines=true]{haskell}{../../Chapter7/RealTimeQueue.hs}
+    \inputminted[breaklines=true,fontsize=\footnotesize]{haskell}{../../Chapter7/RealTimeQueue.hs}
     \caption{Real-Time Queue}
     \label{lst:Real-Time Queue}
 \end{listing}
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -482,40 +453,52 @@ C. Okasaki yields both the first techniques for analyzing persistent amortized d
 
 
 
-
-
-
-
-
-
-
-
-
-
 %%%%%%%%%%%% Experiment and results
 
 \section{Experiment \& Results}%
 \label{sec:experiment}
 
-Design a set of experiments to validate the main aspects of the data structure.
+In order to empirically proof that the implementation from Real-Time Queues of section \ref{ssub:Real-Time Queue} runs in worst-case $O(1)$ time, we are going to implement the following experiment design:
 
-A critical analysis of the results of the experiments (theoretical results).
+\begin{enumerate}
+  \item Build a \textit{Real-Time Queue} with a random permutation of operations (to prevent speculation of the performance) of size $n = \{ 1000, 10000, 100000 \}$.
+  \item For each queue, analyze the performance of a sequence of \code{snoc/tail} operations.
+  \item Evaluate if all operations are executed in constant time, independently of the size or the order of operations.
+\end{enumerate}
 
+Benchmarking a lazy programming language is an arduous task and it is easy to end up not measuring the right thing. For this reason, the implemenation of the experiment uses the following frameworks:
 
+\begin{itemize}
+  \item \textit{Criterion}: provides both a framework for executing and analysing benchmarks and a set of driver functions that makes it easy to build and run benchmarks, and to analyse their results.
+  \item \textit{QuickCheck}: is a library for random testing of program properties.
+\end{itemize}
 
+The complete code for this experiment appears in Listing \ref{lst:bench-impl}.
 
+\begin{listing}[H]
+    \inputminted[breaklines=true,fontsize=\scriptsize]{haskell}{../../Experiments/RealTimeQueues/Main.hs}
+    \caption{Benchmark implementation}
+    \label{lst:bench-impl}
+\end{listing}
 
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=0.7]{experiment}
+  \caption{Benchmarks results}
+  \label{fig:experiment results}
+\end{figure}
 
+The results of the experiment appear in Figure \ref{fig:experiment results}.
+The \textit{standard deviation} is low which is a good indicator that the values are near the mean of the set.
+The \textit{real} execution time of these operations is inside the \textit{confidence interval}. As the range is narrow, we can assume that the values are significant.
+Furthemore, the \textit{coefficient of determination} ($R^2$) is near $1$ which means that the observed outcomes replicate well the model with respect to the total variation.
 
+\newpage
 
+The results display similar \textit{mean} execution time for all operations independently of the size of the queue and the order of the operations.
+Applying a \textit{Student's t-test} we can determine if all the operations do follow the same execution time.
 
-
-
-
-
-
-
-
+From the previous results, we can conclude that the functional \textit{Real-Time Queues} from section \ref{ssub:Real-Time Queue} has a $O(1)$ worst-case running time.
 
 
 
@@ -527,11 +510,6 @@ A critical analysis of the results of the experiments (theoretical results).
 Reading \textit{Purely Functional Data Structures} has been very educative. The book is well structured and easy to follow. It has helped me to get a deeper understanding on how to design and implement purely functional data structures. And, I also learnt \textit{Standard M.L}, while reading the book, which is interesting from a programming language designer point of view.
 
 Finally, it has helped me to get a better understanding of \textit{lazy evaluation} which, in conjunction with \textit{equational reasoning} and \textit{denotational semantics}, are still not very explored techniques.
-
-
-
-
-
 
 
 

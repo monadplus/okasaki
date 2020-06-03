@@ -4,29 +4,35 @@
 module Main where
 
 import qualified Chapter7.RealTimeQueue as RTQ
-import           Control.DeepSeq
+import qualified Data.Foldable          as Foldable
+import qualified Data.List              as List
 import           Gauge
 import           Prelude                hiding (tail)
 import           Test.QuickCheck
 
+-- Recall that gauge do not have a pretty html output.
 
 main :: IO ()
-main =
-  defaultMain
+main = defaultMain
+  [ bgroup "Real-Time Queues"
+      [ runBench 1000
+      , runBench 10000
+      , runBench 100000
+      ]
+  ]
 
 runBench :: Int -> Benchmark
-runBench n
-
-    [ env (generate $ genQueue @Int size) $ \q ->
-        bgroup (show size)"10000"
-          [ bench "snoc" $ whnf (RTQ.snoc 0) q
-          , bench "head" $ whnf RTQ.head q
-          , bench "tail" $ whnf RTQ.tail q
-          ]
-    ]
-
+runBench size =
+  env (generate $ genQueue @Int size) $ \q ->
+    bgroup (show size)
+      [ bench "snoc" $ whnf (applyN 100 (RTQ.snoc 0)) q
+      --, bench "head" $ whnf RTQ.head q
+      , bench "tail" $ whnf (applyN 100 RTQ.tail) q
+      ]
 
 -- | Returns a Queue of the given size.
+--
+-- FIXME: generating queues of size > 1000000 is slow.
 genQueue
   :: Arbitrary a
   => Int
@@ -49,19 +55,5 @@ genQueue n
 
     tail q' = pure $ RTQ.tail q'
 
--- main :: IO ()
--- main =
---   defaultMain
---     [ bgroup "worst-case"
---         [ bench "snoc" $ benchQueue @Int (return . RTQ.snoc 0)
---         , bench "head" $ benchQueue @Int (return . RTQ.head)
---         , bench "snoc" $ benchQueue @Int (return . RTQ.tail)
---         ]
---     ]
-
--- Check if this is ok.
--- benchQueue
---   :: (Arbitrary a, NFData a, NFData b)
---   => (RTQ.Queue a -> IO b)
---   -> Benchmarkable
--- benchQueue = perBatchEnv (const (generate $ genQueue size))
+applyN :: Int -> (a -> a) -> a -> a
+applyN n f = Foldable.foldr (.) id (List.replicate n f)

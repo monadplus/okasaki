@@ -1,12 +1,18 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric  #-}
+{-# LANGUAGE LambdaCase     #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Chapter7.RealTimeQueue where
 
-import           StrictList (List(..))
+import           Control.DeepSeq
+import           GHC.Generics
+import           StrictList      (List (..))
 
 data Queue a =
-  Queue [a]       -- f
-        (List a)  -- r
-        [a]       -- Schedule
+    Queue [a]       -- f
+          (List a)  -- r
+          [a]       -- Schedule
+  deriving (Eq, Generic, Generic1, NFData, NFData1)
 
 empty :: Queue a
 empty = Queue [] Nil []
@@ -21,9 +27,9 @@ rotate :: [a] -> List a -> [a]
 rotate f1 r1 = rotate' f1 r1 []
   where
     rotate' :: [a] -> List a -> [a] -> [a]
-    rotate' [] (Cons y _) a = y:a
+    rotate' [] (Cons y _) a      = y:a
     rotate' (x:xs) (Cons y ys) a = x : rotate' xs ys (y:a)
-    rotate' _ _ _ = error "Inconceivable by invariant"
+    rotate' _ _ _                = error "Inconceivable by invariant"
 
 exec :: [a] -> List a -> [a] -> Queue a
 exec f r (x:s) = x `seq` Queue f r s
@@ -43,3 +49,7 @@ head (Queue (x:_) _ _) = x
 tail :: Queue a -> Queue a
 tail (Queue [] _ _)    = error "empty"
 tail (Queue (_:f) r s) = exec f r s
+
+-- | Orphan instances
+instance NFData a => NFData (List a)
+instance NFData1 List
